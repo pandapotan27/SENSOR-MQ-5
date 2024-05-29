@@ -1,0 +1,90 @@
+#include <Wire.h> // Library untuk komunikasi I2C
+#include <LiquidCrystal_I2C.h> // Library untuk LCD I2C
+
+LiquidCrystal_I2C lcd(0x27,16,2); // Inisialisasi objek lcd dengan alamat I2C 0x27 dan ukuran 16x2
+
+int valorsensorllama; // Variabel untuk menyimpan nilai dari sensor api
+int valorsensorgas; // Variabel untuk menyimpan nilai dari sensor gas
+int LED=7; // Pin digital untuk LED
+int buzzer=8; // Pin digital untuk buzzer
+
+// Motor pins
+int m1=2; // Pin digital untuk motor 1, maju
+int m12=3; // Pin digital untuk motor 1, mundur
+int m13=6; // Pin PWM untuk kecepatan motor 1
+
+int m2=4; // Pin digital untuk motor 2, maju
+int m22=5; // Pin digital untuk motor 2, mundur
+int m23=11; // Pin PWM untuk kecepatan motor 2
+
+void setup() 
+{ 
+  pinMode(LED, OUTPUT); // Set pin LED sebagai output
+  pinMode(buzzer, OUTPUT); // Set pin buzzer sebagai output
+  pinMode(m1, OUTPUT); // Set pin motor 1 maju sebagai output
+  pinMode(m12, OUTPUT); // Set pin motor 1 mundur sebagai output
+  pinMode(m13, OUTPUT); // Set pin motor 1 kecepatan sebagai output
+  pinMode(m2, OUTPUT); // Set pin motor 2 maju sebagai output
+  pinMode(m22, OUTPUT); // Set pin motor 2 mundur sebagai output
+  pinMode(m23, OUTPUT); // Set pin motor 2 kecepatan sebagai output
+  
+  lcd.init(); // Inisialisasi LCD
+  lcd.backlight(); // Nyalakan lampu latar LCD
+  Serial.begin(9600); // Mulai komunikasi serial dengan baud rate 9600
+
+}
+
+void loop() 
+{
+  valorsensorllama= analogRead(A0); // Membaca nilai analog dari sensor api (pin A0)
+  valorsensorgas = analogRead(A1); // Membaca nilai analog dari sensor gas (pin A1)
+  delay(100); // Menunggu selama 100 milidetik
+  lcd.clear(); // Membersihkan tampilan LCD
+  lcd.print("sensor_llama:"); // Menampilkan teks "sensor_llama:" di LCD
+  lcd.print(valorsensorllama,1); // Menampilkan nilai sensor api di LCD
+  lcd.setCursor(0, 1); // Pindah ke baris kedua LCD
+  lcd.print("sensor_gas:"); // Menampilkan teks "sensor_gas:" di LCD
+  lcd.print(valorsensorgas,1); // Menampilkan nilai sensor gas di LCD
+  Serial.print(valorsensorllama); // Menampilkan nilai sensor api di Serial Monitor
+  Serial.println(); // Pindah ke baris baru di Serial Monitor
+  Serial.print(valorsensorgas); // Menampilkan nilai sensor gas di Serial Monitor
+  Serial.println(); // Pindah ke baris baru di Serial Monitor
+  
+  if(valorsensorllama<500 || valorsensorgas> 400 ){ // Jika nilai sensor api kurang dari 500 atau nilai sensor gas lebih dari 400
+    digitalWrite(LED,HIGH); // Nyalakan LED
+    tone(buzzer, 440); // Nyalakan buzzer dengan frekuensi 440 Hz
+
+    // Matikan motor 1
+    digitalWrite(m1,LOW); // Matikan motor 1 maju
+    digitalWrite(m12,LOW); // Matikan motor 1 mundur
+    analogWrite(m13,0); // Set kecepatan motor 1 menjadi 0
+
+    // Matikan motor 2
+    digitalWrite(m2,LOW); // Matikan motor 2 maju
+    digitalWrite(m22,LOW); // Matikan motor 2 mundur
+    analogWrite(m23,0); // Set kecepatan motor 2 menjadi 0
+
+  }else 
+  {
+    // Avanzar (Maju)
+    digitalWrite(m1,HIGH); // Nyalakan motor 1 maju
+    digitalWrite(m12,LOW); // Matikan motor 1 mundur
+    analogWrite(m13,250); // Set kecepatan motor 1 menjadi 250
+
+    digitalWrite(m2,HIGH); // Nyalakan motor 2 maju
+    digitalWrite(m22,LOW); // Matikan motor 2 mundur
+    analogWrite(m23,250); // Set kecepatan motor 2 menjadi 250
+
+    // Detener (Berhenti)
+    digitalWrite(m1,LOW); // Matikan motor 1 maju
+    digitalWrite(m12,LOW); // Matikan motor 1 mundur
+    analogWrite(m13,0); // Set kecepatan motor 1 menjadi 0
+
+    digitalWrite(m2,LOW); // Matikan motor 2 maju
+    digitalWrite(m22,LOW); // Matikan motor 2 mundur
+    analogWrite(m23,0); // Set kecepatan motor 2 menjadi 0
+
+    digitalWrite(LED,LOW); // Matikan LED
+    noTone(buzzer); // Matikan buzzer
+  }
+}
